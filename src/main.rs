@@ -1,38 +1,68 @@
 use console_engine::{self, Color, ConsoleEngine, KeyCode, pixel};
 use euclid::{Point2D, UnknownUnit, Vector2D};
 
-// Engine initialization
+/// The map's width.
 const WIDTH: u32 = 17;
+
+/// The map's height.
 const HEIGHT: u32 = 15;
+
+/// The terminal's refresh rate.
 const FPS: u32 = 8;
 
-// Controls
+/// The quit key.
 const QUIT_KEY: KeyCode = KeyCode::Char('q');
+
+/// The pause key.
 const PAUSE_KEY: KeyCode = KeyCode::Esc;
+
+/// The up key.
 const UP_KEY: KeyCode = KeyCode::Up;
+
+/// The down key.
 const DOWN_KEY: KeyCode = KeyCode::Down;
+
+/// The left key.
 const LEFT_KEY: KeyCode = KeyCode::Left;
+
+/// The right key.
 const RIGHT_KEY: KeyCode = KeyCode::Right;
 
-// Colors of the on screen objects
+/// The map's color.
 const MAP_COLOR: Color = Color::Green;
+
+/// The border's color.
 const BORDER_COLOR: Color = Color::Black;
+
+/// The food's color.
 const FOOD_COLOR: Color = Color::Red;
+
+/// The snek's color.
 const SNEK_COLOR: Color = Color::Blue;
+
+/// The head's color.
 const HEAD_COLOR: Color = Color::Black;
 
-// Characters and strings that will be drawn
+/// The character to be used for the snek's eyes when alive.
 const EYE_CHAR: char = '^';
+
+/// The character to be used for the snek's eyes when dead.
 const DEAD_EYE_CHAR: char = 'x';
+
+/// The string that will be displayed when the game is resumed.
 const GAME_PROMPT: &str = "SNEK";
+
+/// The string that will be displayed when the game is paused.
 const PAUSE_PROMPT: &str = "PAUSED";
+
+/// The string that will be displayed right before presenting the score.
 const SCORE_PROMPT: &str = "SCORE: ";
 
-// Printed at the end of the game
+/// Printed at the end of the game.
 const END_MESSAGE: &str = "Due to your subpar prowess and deriliction of duty, the snek's concept \
 of a subjective experience and consciousness has ceased to be...\nFinal Score: ";
 
-// Snek initialization
+/// The snek's initial state.
 const STARTING_BODY: [Point; 4] = [
     Point::new(0, 0),
     Point::new(1, 0),
@@ -40,11 +70,13 @@ const STARTING_BODY: [Point; 4] = [
     Point::new(3, 0),
 ];
 
-// Represents an on scren point and vector
+/// Represents an on screen point.
 type Point = Point2D<i32, UnknownUnit>;
+
+/// Represents a vector.
 type Vector = Vector2D<i32, UnknownUnit>;
 
-// Represents the game (the snek and the engine)
+/// Represents the game's state (the snek and the terminal).
 struct Game {
     snek: Snek,
     food: Point,
@@ -55,7 +87,7 @@ struct Game {
 }
 
 impl Game {
-    // Creates a new game
+    /// Creates a new game.
     fn new(width: u32, height: u32, fps: u32, starting_body: &[Point]) -> Self {
         Self {
             snek: Snek::new(starting_body),
@@ -68,7 +100,7 @@ impl Game {
         }
     }
 
-    // The main game loop that runs throughout the game
+    /// The main game loop that runs throughout the game.
     fn main_loop(&mut self) {
         self.engine.set_title("SNEK");
         while self.snek.alive {
@@ -86,12 +118,12 @@ impl Game {
         }
     }
 
-    // Returns the score of the game
+    /// Returns the score of the game.
     fn score(&self) -> usize {
         self.snek.score()
     }
 
-    // Draws the map, snek, and food
+    /// Draws the map, snek, and food.
     fn draw(&mut self) {
         self.draw_map();
         self.draw_prompts();
@@ -99,7 +131,7 @@ impl Game {
         self.draw_snek();
     }
 
-    // Draws the border and map
+    /// Draws the border and map.
     fn draw_map(&mut self) {
         self.engine.fill(pixel::pxl_bg(' ', BORDER_COLOR));
         self.engine.fill_rect(
@@ -111,10 +143,10 @@ impl Game {
         );
     }
 
-    // Draws the prompts (game, pause, and score)
+    /// Draws the prompts (game, pause, and score).
     fn draw_prompts(&mut self) {
         let score = SCORE_PROMPT.to_owned() + &self.score().to_string();
-        let mid = self.engine.get_width() / 2 - score.len() as u32 / 2;
+        let mut mid = self.engine.get_width() / 2 - score.len() as u32 / 2;
         self.engine.print_fbg(
             mid as i32,
             self.engine.get_height() as i32 - 1,
@@ -122,16 +154,17 @@ impl Game {
             Color::Reset,
             BORDER_COLOR,
         );
+
         let prompt = match self.paused {
             true => PAUSE_PROMPT,
             false => GAME_PROMPT,
         };
-        let mid = self.engine.get_width() / 2 - prompt.len() as u32 / 2;
+        mid = self.engine.get_width() / 2 - prompt.len() as u32 / 2;
         self.engine
             .print_fbg(mid as i32, 0, prompt, Color::Reset, BORDER_COLOR);
     }
 
-    // Draws the food
+    /// Draws the food.
     fn draw_food(&mut self) {
         self.engine.set_pxl(
             self.food.x * 2 + 2,
@@ -145,7 +178,7 @@ impl Game {
         );
     }
 
-    // Draws the snek
+    /// Draws the snek.
     fn draw_snek(&mut self) {
         for part in &self.snek.body {
             self.engine
@@ -158,6 +191,7 @@ impl Game {
             true => EYE_CHAR,
             false => DEAD_EYE_CHAR,
         };
+
         self.engine.set_pxl(
             last.x * 2 + 2,
             last.y + 1,
@@ -170,12 +204,12 @@ impl Game {
         );
     }
 
-    // Checks if the player wants to quit
+    /// Checks if the player wants to quit.
     fn quit(&mut self) -> bool {
         self.engine.is_key_pressed(QUIT_KEY)
     }
 
-    // Deals with movement input; returns whether should quit or not
+    /// Deals with movement input and returns whether the game should quit.
     fn input(&mut self) {
         if self.engine.is_key_pressed(PAUSE_KEY) {
             self.paused = !self.paused;
@@ -191,7 +225,7 @@ impl Game {
     }
 }
 
-// Contains information about the snek
+/// Contains information about the snek.
 struct Snek {
     body: Vec<Point>,
     start_len: usize,
@@ -201,7 +235,7 @@ struct Snek {
 }
 
 impl Snek {
-    // Creates a new snek
+    /// Creates a new snek.
     fn new(starting_body: &[Point]) -> Self {
         Self {
             body: Vec::from(starting_body),
@@ -212,7 +246,7 @@ impl Snek {
         }
     }
 
-    // Moves the snek in the current direction
+    /// Moves the snek in the current direction.
     fn slither(&mut self, food: &mut Point, width: u32, height: u32) {
         self.body
             .push(*self.body.last().unwrap() + self.direction.to_vector());
@@ -225,7 +259,7 @@ impl Snek {
         }
     }
 
-    // Returns whether the snek is dead or not (inside itself or wall)
+    /// Returns whether the snek is dead or not (inside itself or a wall).
     fn dead(&mut self, width: u32, height: u32) -> bool {
         let last = self.body.last().unwrap();
         self.body[0..self.body.len() - 1].contains(last)
@@ -235,19 +269,19 @@ impl Snek {
             || last.y > height as i32 - 1
     }
 
-    // Does some checking and then changes the direction of the snek
+    /// Does some checking and then changes the direction of the snek.
     fn change_direction(&mut self, direction: Direction) {
         if self.direction != direction.opposite() {
             self.direction = direction;
         }
     }
 
-    // Returns the score (current len - starting len)
+    /// Returns the score (current snek's length - starting snek's length).
     fn score(&self) -> usize {
         self.body.len() - self.start_len
     }
 
-    // Elongates the snek if its head is on a food point
+    /// Elongates the snek if its head is on a food point.
     fn eat(&mut self, food: Point) {
         if *self.body.last().unwrap() == food {
             self.eating = true;
@@ -255,7 +289,7 @@ impl Snek {
     }
 }
 
-// Represents one of the four directions
+/// Represents one of the four directions.
 #[derive(PartialEq)]
 enum Direction {
     Up,
@@ -265,7 +299,7 @@ enum Direction {
 }
 
 impl Direction {
-    // Returns the opposite direction
+    /// Returns the opposite direction.
     fn opposite(&self) -> Self {
         match self {
             Direction::Up => Self::Down,
@@ -275,7 +309,7 @@ impl Direction {
         }
     }
 
-    // Converts the direction to a vector
+    /// Converts the direction to a vector.
     fn to_vector(&self) -> Vector {
         match self {
             Direction::Up => Vector::new(0, -1),
@@ -286,7 +320,7 @@ impl Direction {
     }
 }
 
-// Randomizes a point, excluding a list points
+/// Randomizes a point, excluding a list points.
 fn rand_point(width: u32, height: u32, exclude: &[Point]) -> Point {
     let mut point = Point::new(
         fastrand::i32(0..width as i32),
@@ -301,10 +335,11 @@ fn rand_point(width: u32, height: u32, exclude: &[Point]) -> Point {
     point
 }
 
-// Entry point
+/// The game's main entry point.
 fn main() {
     let mut game = Game::new(WIDTH, HEIGHT, FPS, &STARTING_BODY);
     game.main_loop();
+
     let score = game.score();
     drop(game);
     println!("{}", END_MESSAGE.to_string() + &score.to_string());
